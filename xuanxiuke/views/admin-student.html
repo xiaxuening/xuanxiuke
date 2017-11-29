@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>管理员面板</title>
+    <link href="/public/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/public/css/dashboard.css" rel="stylesheet">
+    <style type="text/css">
+        .tab-pane{
+            padding-top:20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">选修课报名系统管理员面板</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#">退出登录</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <ul class="nav nav-sidebar">
+                <li><a href="/admin/">管理面板首页</a></li>
+                <li class="active"><a href="/admin/student/">学生管理</a></li>
+                <li><a href="/admin/course/">课程管理</a></li>
+            </ul>
+        </div>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <h1 class="page-header">学生管理</h1>
+            <div class="bs-example bs-example-tabs">
+                <ul id="myTab" class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#daoru"  role="tab" data-toggle="tab" aria-controls="home" aria-expanded="true">导入学生数据</a></li>
+                    <li role="presentation" class=""><a href="#shengcheng" role="tab"   data-toggle="tab" aria-controls="profile" aria-expanded="false">生成学生密码</a></li>
+                    <li role="presentation" class=""><a href="#xiugai" role="tab"  data-toggle="tab" aria-controls="profile" aria-expanded="false">修改学生密码</a></li>
+                </ul>
+                <div id="myTabContent" class="tab-content">
+                    <div role="tabpanel" class="tab-pane fade active in" id="daoru" aria-labelledby="home-tab">
+                        <!--导入学生数据-->
+                        <div class="alert alert-danger" role="alert">
+                            导入Excel表会导致学生数据覆盖，请谨慎操作啊！
+                        </div>
+                        <p>
+                            请选择Excel文件，拓展名必须是xlsx文件。
+                        </p>
+                        <!--内嵌一个ifrmae，防止表单提交之后页面跑走了-->
+                        <iframe  frameborder="0" src="/admin/student/uploadform"></iframe>
+                    </div>
+                    <div role="tabpanel" class="tab-pane fade" id="shengcheng" aria-labelledby="profile-tab">
+                        <!--生成学生初始密码-->
+                        <div class="alert alert-danger" role="alert">
+                            生成学生密码之后，之前所有密码作废！请一定谨慎操作！
+                        </div>
+                        <input type="button" class="btn btn-warning btn-lg" value="我要生成所有学生密码，并且作废之前的密码" id="shengchengBtn"/>
+                        <p id="jieguo" style="display: none;">
+                            恭喜！密码已经生成成功，请点击下载<a href="/admin/student/exportexcel" id="xiazai">表格</a>
+                        </p>
+                    </div>
+                    <div role="tabpanel" class="col-lg-4 tab-pane fade" id="xiugai" aria-labelledby="dropdown1-tab">
+                        <!--修改学生密码-->
+                        <p>
+                            学  号：<input type="text" id="sidText" class="form-control">
+                        </p>
+                        <p>
+                            新密码：<input type="text" id="pwText" class="form-control">
+                        </p>
+                        <p>
+                            <input id="gaimimabtn" type="button" value="提交" class="btn btn-success" />
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="/public/js/jquery-1.12.3.min.js"></script>
+<script type="text/javascript" src="/public/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+    $("#gaimimabtn").click(function(){
+        $.post("/admin/student/changepw",{
+            "sid" : $("#sidText").val(),
+            "pw" : $("#pwText").val()
+        },function(data){
+            alert(data);
+        });
+    });
+
+    $("#shengchengBtn").click(function(){
+       var boolean = confirm("真的要重新生成初始密码么？之前的密码都作废了啊！");
+       if(boolean){
+           var boolean2 = confirm("真的么？？这是最后一次确认！之前的密码都作废了啊！");
+           if(boolean2){
+                $.get("/admin/student/setinitpassword",function(data){
+                    if(data == "1"){
+                        $("#shengchengBtn").hide();
+                        $("#jieguo").show();
+                    }
+                })
+            }
+        }
+    });
+
+    $("#xiazai").click(function(){
+        $("#shengchengBtn").show();
+        $("#jieguo").hide();
+        alert("下载成功！请妥善保存！数据库密码已经加密，不能重复下载！丢了就重新生成吧！");
+    });
+</script>
+</body>
+</html>

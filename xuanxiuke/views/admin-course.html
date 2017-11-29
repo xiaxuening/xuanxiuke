@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>管理员面板</title>
+    <link href="/public/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/public/css/dashboard.css" rel="stylesheet">
+    <!--jQuery dependencies-->
+    <link rel="stylesheet" href="/public/css/jquery-ui.css"/>
+    <script src="/public/js/jquery-1.12.3.min.js"></script>
+    <script src="/public/js/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="/public/css/pqgrid.min.css"/>
+    <script src="/public/js/pqgrid.min.js"></script>
+    <link rel="stylesheet" href="/public/themes/office/pqgrid.css"/>
+    <script type="text/javascript" src="/public/js/underscore-min.js"></script>
+    <style type="text/css">
+        .tab-pane {
+            padding-top: 20px;
+        }
+
+        label {
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+                    aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">选修课报名系统管理员面板</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#">退出登录</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <ul class="nav nav-sidebar">
+                <li><a href="/admin/">管理面板首页</a></li>
+                <li><a href="/admin/student/">学生管理</a></li>
+                <li class="active"><a href="/admin/course/">课程管理</a></li>
+            </ul>
+        </div>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <h1 class="page-header">课程管理</h1>
+            <input type="button" class="btn btn-info btn-lg" value="添加课程" data-toggle="modal" data-target="#myModal"/>
+            <input type="button" class="btn btn-success btn-lg" value="刷新" onclick="refresh()"/>
+            <!--表格start-->
+            <section class="grid" style="width:1000px;">
+                <div id="grid" style="margin-top:20px;"></div>
+                <!--表格end-->
+                <input type="button" value="删除所选" id="shanchubtn" class="btn btn-danger" style="float:right;" />
+            </section>
+        </div>
+    </div>
+</div>
+
+<!--弹出的添加课程对话框start-->
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
+                        class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel">添加课程</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    课程序号:
+                    <input class="form-control" type="text" id="xuhaoTxt"/>
+                </p>
+                <p>
+                    课程名字:
+                    <input class="form-control" type="text" id="nameTxt"/>
+                </p>
+                <p>
+                    课程日期:
+                    <label><input type="radio" value="2" name="dateTxt"/>周2</label>
+                    <label><input type="radio" value="4" name="dateTxt"/>周4</label>
+                    <label><input type="radio" value="5" name="dateTxt"/>周5</label>
+                </p>
+                <p>
+                    人数:
+                    <input class="form-control" type="number" id="renshuTxt"/>
+                </p>
+                <p>
+                    能报名的年级：
+                    <label><input name="nianji" type="checkbox" value="1"/>初一</label>
+                    <label><input name="nianji" type="checkbox" value="2"/>初二</label>
+                    <label><input name="nianji" type="checkbox" value="3"/>初三</label>
+                    <label><input name="nianji" type="checkbox" value="4"/>高一</label>
+                    <label><input name="nianji" type="checkbox" value="5"/>高二</label>
+                    <label><input name="nianji" type="checkbox" value="6"/>高三</label>
+
+                </p>
+                <p>
+                    教师:
+                    <input class="form-control" type="text" id="jiaoshiTxt"/>
+                </p>
+                <p>
+                    简介：
+                    <textarea class="form-control" id="jianjie" cols="30" rows="10"></textarea>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="tijiaoBtn">提交</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--弹出的添加课程对话框end-->
+
+<script type="text/javascript" src="/public/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+    $("#tijiaoBtn").click(function () {
+        //这个JSON会直接进入数据库，所以体会到了NoSQL的好处，程序是JSON，持久也是JSON，不变形！
+        $.post("/admin/course/add", {
+            "cid": $("#xuhaoTxt").val(),
+            "name": $("#nameTxt").val(),
+            "date": $("input[name=dateTxt]:checked").val(),
+            "number": $("#renshuTxt").val(),
+            "grade": (function () {
+                var str = "";
+                //遍历所有的选中的框框，拼接值
+                $("input[name=nianji]:checked").each(function () {
+                    str += $(this).val();
+                });
+                return str;
+            })(),
+            "teacher": $("#jiaoshiTxt").val(),
+            "detail": $("#jianjie").val()
+        }, function (data) {
+            alert(data);
+            $("#myModal").modal("hide");
+            refresh();
+        });
+    });
+
+    //删除按钮
+    $("#shanchubtn").click(function(){
+        //除以2，这是因为paramquery这个框架有点小问题，会重复算tr两次
+        var amount = $("tr.pq-row-select").length / 2;
+
+        var boolean = confirm("确认要删除" + amount + "条目么？");
+
+        if(!boolean){
+            return;
+        }
+
+        //要删除的元素的_id的数组
+        var needToDelete = [];
+        //遍历，找到要删除的元素的_id，放入数组，集体发给模型，进行集体删除！
+        $("tr.pq-row-select").each(function(){
+            needToDelete.push($(this).find("td[pq-col-indx=0]").html());
+        });
+        //去重，这是因为paramquery这个框架有点小问题，会重复算tr两次
+        needToDelete = _.uniq(needToDelete);
+        //发出Ajax请求
+        $.post("/admin/course/delete",{
+            needToDelete : JSON.stringify(needToDelete)
+        },function(data){
+            if(data == -1){
+                alert("删除错误！服务器故障，请联系18883248234");
+            }else{
+                alert("成功删除" + data + "条");
+                $("tr.pq-row-select").slideUp();
+            }
+        });
+    });
+</script>
+<script type="text/javascript">
+        refresh();
+
+        function refresh() {
+            //数据
+            $.get("/admin/course/all",{z:Math.random()}, function (data) {
+                //用ajax拿到结果
+                var dataobj = data.results;
+                //配置表格
+                $("#grid").pqGrid({
+                    width: 1000,
+                    height: 400,
+                    title: "全部课程一览表",
+                    resizable: false,
+                    draggable: false,
+                    dataModel: {
+                        data: dataobj  //填充数据
+                    },
+                    selectionModel: { type: 'none', subtype:'incr', cbHeader:true, cbAll:true},
+                    colModel: [
+                        {title: "_id", width: 90, dataType: "string", dataIndx: "_id",editable:false},
+                        {title: "编号", width: 40, dataType: "integer", dataIndx: "cid"},
+                        {title: "课程名称", width: 100, dataType: "string", dataIndx: "name"},
+                        {title: "星期", width: 60, dataType: "string", dataIndx: "date"},
+                        {title: "允许数量", width: 100, dataType: "integer", dataIndx: "number"},
+                        {title: "允许年级", width: 100, dataType: "string", dataIndx: "grade"},
+                        {title: "老师", width: 100, dataType: "string", dataIndx: "teacher"},
+                        {title: "简介", width: 300, dataType: "string", dataIndx: "detail", editor: {type:'textarea', attr:'rows=8'} , sortable: false},
+                        { title: "", dataIndx: "state", width: 30, minWidth:30, align: "center", type:'checkBoxSelection', cls: 'ui-state-default', resizable: false, sortable:false }
+                    ],
+                    //用户编辑单元格结束之后做的事情
+                    cellSave: function (event, ui) {
+                        // console.log(ui);
+                        // ui.rowData能够拿到这一行的全部数据，甭废话，直接扔给服务器持久化！
+                        $.post("/admin/course/change", ui.rowData, function (data) {
+
+                        });
+                    }
+                });
+            });
+        }
+</script>
+</body>
+</html>
